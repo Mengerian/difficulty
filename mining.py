@@ -262,6 +262,20 @@ def next_bits_wtema(msg, alpha_recip):
                       prior_target - max_change)
     return target_to_bits(next_target)
 
+def next_bits_wtema2(msg, alpha_recip):
+    # This algorithm is similar to wtema, except that the adjustment is delayed
+    # by one block. This is done in order to avoid theoretic incentive problems
+    # related to Selfish Mining.
+    block_time = states[-2].timestamp - states[-3].timestamp
+    prior_target = bits_to_target(states[-2].bits)
+    next_target = prior_target // (IDEAL_BLOCK_TIME * alpha_recip)
+    next_target *= block_time + IDEAL_BLOCK_TIME * (alpha_recip - 1)
+    # Constrain individual target changes to 12.5%
+    max_change = prior_target >> 3
+    next_target = max(min(next_target, prior_target + max_change),
+                      prior_target - max_change)
+    return target_to_bits(next_target)
+
 def next_bits_ema(msg, window):
     """This calculates difficulty (1/target) as proportional to the recent hashrate, where "recent hashrate" is estimated by an EMA (exponential moving avg) of recent "hashrate observations", and
     a "hashrate observation" is inferred from each block time.
@@ -455,6 +469,9 @@ Algos = {
         'alpha_recip': 104, # floor(1/(1 - pow(.5, 1.0/72))), # half-life = 72
     }),
     'wtema-100' : Algo(next_bits_wtema, {
+        'alpha_recip': 144, # floor(1/(1 - pow(.5, 1.0/100))), # half-life = 100
+    }),
+    'wtema2-100' : Algo(next_bits_wtema2, {
         'alpha_recip': 144, # floor(1/(1 - pow(.5, 1.0/100))), # half-life = 100
     }),
     'simpexp-1d' : Algo(next_bits_simple_exponential, {

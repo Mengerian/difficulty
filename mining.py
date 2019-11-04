@@ -276,6 +276,34 @@ def next_bits_wtema2(msg, alpha_recip):
                       prior_target - max_change)
     return target_to_bits(next_target)
 
+def next_bits_simplediff1(msg):
+    # This algorithm is similar to wtema, except with parameters chosen to 
+    # permit using a bitshift rather than division in the calculation.
+    # This version corresponds to alpha_recip = 109.2266666666
+    block_time = states[-1].timestamp - states[-2].timestamp
+    prior_target = bits_to_target(states[-1].bits)
+    next_target = prior_target >> 16
+    next_target *= block_time + 64936
+    # Constrain individual target changes to 12.5%
+    max_change = prior_target >> 3
+    next_target = max(min(next_target, prior_target + max_change),
+                      prior_target - max_change)
+    return target_to_bits(next_target)
+
+def next_bits_simplediff2(msg):
+    # This algorithm is similar to wtema, except with parameters chosen to 
+    # permit using a bitshift rather than division in the calculation.
+    # This version corresponds to alpha_recip = 218.4533333333
+    block_time = states[-1].timestamp - states[-2].timestamp
+    prior_target = bits_to_target(states[-1].bits)
+    next_target = prior_target >> 17
+    next_target *= block_time + 130472
+    # Constrain individual target changes to 12.5%
+    max_change = prior_target >> 3
+    next_target = max(min(next_target, prior_target + max_change),
+                      prior_target - max_change)
+    return target_to_bits(next_target)
+
 def next_bits_ema(msg, window):
     """This calculates difficulty (1/target) as proportional to the recent hashrate, where "recent hashrate" is estimated by an EMA (exponential moving avg) of recent "hashrate observations", and
     a "hashrate observation" is inferred from each block time.
@@ -474,6 +502,8 @@ Algos = {
     'wtema2-100' : Algo(next_bits_wtema2, {
         'alpha_recip': 144, # floor(1/(1 - pow(.5, 1.0/100))), # half-life = 100
     }),
+    'simplediff1' : Algo(next_bits_simplediff1, {}),
+    'simplediff2' : Algo(next_bits_simplediff2, {}),
     'simpexp-1d' : Algo(next_bits_simple_exponential, {
         'window': 24 * 60 * 60,
     }),
